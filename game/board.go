@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/JMThomas00/Concord/sdk/table"
+	"github.com/JMThomas00/Concord/sdk/wire"
 	"github.com/JMThomas00/concord-tak/engine"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -76,12 +77,26 @@ func (b *Board) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if b.seat.MyTurn() {
 				b.typing, b.input, b.err = true, "", ""
 			}
-		case "q", "esc":
+		case "q":
 			return b, tea.Quit // hand the keyboard back (in Concord)
 		}
 	}
 	return b, nil
 }
+
+// ClaimedKeys keeps Esc while there's something for it to cancel: a stack
+// being carried, or a move being typed. Otherwise Esc is Concord's, to
+// leave the pane.
+func (b *Board) ClaimedKeys() []string {
+	if b.carrying || b.typing {
+		return []string{wire.PaneKeyEsc}
+	}
+	return nil
+}
+
+// Typing (table.Typer) sends every key to the board while a move is being
+// typed, M included.
+func (b *Board) Typing() bool { return b.typing }
 
 func (b *Board) moveCursor(dir int) {
 	n := b.n()

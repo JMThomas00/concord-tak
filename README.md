@@ -34,15 +34,16 @@ You need to be the server owner, or have the **Manage Plugins** permission.
    restart, no files to edit.
 3. Open **Server Settings → Channels**, create a channel, and choose
    **Tak Table** as its type. Its options:
-   - **Seating**: *seats* (one board; sit down with Tab, everyone else
+   - **Seating**: *seats* (one board; sit down with M, everyone else
      watches), *challenge* (a lobby where members challenge each other), or
      *private* (your own games with opponents you pick).
    - **Allow spectators**, **Computer opponent**, and **Computer strength**
      (easy, normal or hard).
    - **Board size** (3×3 to 8×8) and **Komi**.
 4. Select the channel and press **Tab** (or click the board) so your keys go
-   to the game. **Tab** again opens the table menu: sit down, play the
-   computer, resign, rematch. **Ctrl+]** gives the keyboard back to Concord.
+   to the game. **M** opens the table menu: sit down, play the computer,
+   resign, rematch. **Esc** gives the keyboard back to Concord (once there's
+   nothing to cancel), and **Tab** moves on to the member list.
 
 To update later: select it in **Server Settings → Plugins**, press **U**, then
 Enter. A failed update rolls back by itself.
@@ -77,7 +78,7 @@ Each player's first move places one of the **opponent's** flat stones.
   to carry, then each **arrow** step drops one stone, **Space** drops another
   on the same square, **Enter** drops the rest, **Esc** cancels.
 - **:** types a move in PTN (`c3`, `Sd4`, `Cb2`, `3c3>12`).
-- **Tab** opens the table menu: resign, rematch, and so on.
+- **M** opens the table menu: resign, rematch, and so on. (playing standalone, Tab does too)
 
 ## Layout
 

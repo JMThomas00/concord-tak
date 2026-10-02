@@ -74,10 +74,10 @@ func TestTwoPlayersInAChannel(t *testing.T) {
 
 	white := srv.Enter(ch, "alice", 60, 24)
 	black := srv.Enter(ch, "bob", 60, 24)
-	srv.FrameContaining(white, "Tab: sit down")
-	srv.FrameContaining(black, "Tab: sit down")
+	srv.FrameContaining(white, "M: sit down")
+	srv.FrameContaining(black, "M: sit down")
 	for _, v := range []*plugintest.Viewer{white, black} {
-		srv.Key(v, "tab")
+		srv.Key(v, "m")
 		srv.Key(v, "enter")
 	}
 	srv.FrameContaining(white, "place your opponent's first stone")
@@ -92,6 +92,16 @@ func TestTwoPlayersInAChannel(t *testing.T) {
 	srv.FrameContaining(white, "your move")
 
 	// White types a move.
+	// The prompt claims Esc (Esc cancels it) and takes every key, M included.
+	if srv.Key(white, "esc") {
+		t.Fatal("Esc was claimed with nothing to cancel")
+	}
+	srv.Key(white, ":")
+	srv.FrameContaining(white, "move (PTN")
+	if !srv.Key(white, "esc") {
+		t.Fatal("the move prompt didn't claim Esc")
+	}
+	srv.FrameContaining(white, "your move")
 	srv.Key(white, ":")
 	srv.FrameContaining(white, "move (PTN")
 	srv.Type(white, "Sa1")
