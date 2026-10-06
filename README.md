@@ -88,3 +88,7 @@ Each player's first move places one of the **opponent's** flat stones.
 - `release.go`: `go run release.go` builds the release zips Concord installs.
 
 Tag a version (`git tag v0.1.0 && git push --tags`) and the workflow publishes them.
+
+## License
+
+MIT License — see LICENSE file for details.
