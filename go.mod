@@ -3,7 +3,7 @@ module github.com/JMThomas00/concord-tak
 go 1.24.2
 
 require (
-	github.com/JMThomas00/Concord/sdk v0.13.1-0.20261011020856-4aa1e16b8ca3
+	github.com/JMThomas00/Concord/sdk v0.14.0
 	github.com/charmbracelet/bubbletea v1.3.4
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/google/uuid v1.6.0

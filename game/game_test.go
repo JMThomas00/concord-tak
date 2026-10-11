@@ -70,8 +70,10 @@ func TestComputerPlaysLegalMoves(t *testing.T) {
 func TestTwoPlayersInAChannel(t *testing.T) {
 	srv := plugintest.NewServer(t)
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	go plugin.Run(ctx, srv.Config(), table.New(Rules).Handler())
+	cfg := srv.Config()
+	done := make(chan struct{})
+	go func() { plugin.Run(ctx, cfg, table.New(Rules).Handler()); close(done) }()
+	t.Cleanup(func() { cancel(); <-done }) // the plugin stops before its data folder goes
 	srv.WaitReady()
 	ch := uuid.New()
 	srv.Channel(wire.Channel{ID: ch, Name: "tak", PluginConfig: map[string]string{OptionSize: "4"}})
@@ -129,7 +131,8 @@ func startServer(t *testing.T) (*plugintest.Server, uuid.UUID) {
 	srv := plugintest.NewServer(t)
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
-	go func() { plugin.Run(ctx, srv.Config(), table.New(Rules).Handler()); close(done) }()
+	cfg := srv.Config() // before the cleanup below, so the plugin stops before its data folder goes
+	go func() { plugin.Run(ctx, cfg, table.New(Rules).Handler()); close(done) }()
 	t.Cleanup(func() { cancel(); <-done })
 	srv.WaitReady()
 	ch := uuid.New()
