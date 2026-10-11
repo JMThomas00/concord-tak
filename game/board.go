@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/JMThomas00/Concord/sdk/arcade"
 	"github.com/JMThomas00/Concord/sdk/table"
 	"github.com/JMThomas00/Concord/sdk/wire"
 	"github.com/JMThomas00/concord-tak/engine"
@@ -30,6 +32,9 @@ type Board struct {
 
 	typing bool   // entering PTN after ':'
 	input  string // what's been typed
+
+	callout   string // CRUSH!, for a moment after a capstone flattens a wall
+	calloutAt time.Time
 }
 
 func newBoard(s *table.Seat) *Board {
@@ -51,6 +56,9 @@ func (b *Board) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		b.width, b.height = msg.Width, msg.Height
 	case table.ChangedMsg:
 		b.err, b.carrying, b.typing = "", false, false
+		if msg.Move != "" && b.game().Crushed {
+			b.callout, b.calloutAt = "CRUSH!", time.Now()
+		}
 		n := b.n()
 		b.file, b.rank = min(b.file, n-1), min(b.rank, n-1)
 	case tea.KeyMsg:
@@ -385,4 +393,127 @@ func (b *Board) View() string {
 	}
 	lines = append(lines, status)
 	return strings.Join(lines, "\n")
+}
+
+// ── The arcade (table.ArcadeBoard, Panel, Hinter, Animator) ────────────────
+
+// Draw draws the board on the arcade table, in the viewer's own stone set
+// and board.
+func (b *Board) Draw(c *arcade.Canvas, x, y, w, h int) {
+	g := b.game()
+	l := look{
+		set:     set(b.seat.Equipped(kindStones)),
+		style:   style(b.seat.Equipped(kindBoard)),
+		cursor:  -1,
+		landing: -1,
+		last:    g.LastSquares,
+		coords:  true,
+	}
+	if b.seat.MyTurn() && !b.carrying {
+		l.cursor = b.cursor()
+	}
+	if b.carrying {
+		l.path = map[int]bool{b.from: true}
+		for sq := range b.path() {
+			l.path[sq] = true
+		}
+		l.last = nil
+	}
+	if o := g.Outcome(); o.Over && o.Winner >= 0 {
+		l.road = roadOf(g.B, o.Winner)
+		l.lit = len(l.road) // all of it, unless it's being lit up now
+		if f := b.seat.Frame(); f > 0 {
+			l.lit = min(len(l.road), f/2+1)
+		}
+	}
+	drawBoard(c, x, y, w, h, g.B, l)
+	if b.Animating() {
+		drawCallout(c, b.callout, x+w/2, y+h/2-2)
+	}
+}
+
+// DrawSeat draws a side's flat, wall and capstone, and what they have left.
+func (b *Board) DrawSeat(c *arcade.Canvas, seat, x, y, w, h int) {
+	s := set(b.seat.Equipped(kindStones))
+	for k, kind := range []int8{engine.Flat, engine.Wall, engine.Cap} {
+		drawStack(c, []engine.Piece{{Color: int8(seat), Kind: kind}}, x+k*5, y, 4, 2, s, false)
+	}
+	g := b.game().B
+	c.CenterIn(x, w, y+2, fmt.Sprintf("%d STONES", g.Stones[seat]), "dim", "", false)
+	if g.Caps[seat] > 0 || engine.Supply[g.N][1] > 0 {
+		c.CenterIn(x, w, y+3, fmt.Sprintf("%d CAPSTONE%s", g.Caps[seat], plural(g.Caps[seat])), "dim", "", false)
+	}
+}
+
+func plural(n int) string {
+	if n == 1 {
+		return ""
+	}
+	return "S"
+}
+
+// DrawPanel shows the whole stack under the cursor, bottom to top, or the
+// stones in hand while carrying (table.Panel).
+func (b *Board) DrawPanel(c *arcade.Canvas, x, y, w, h int) {
+	g := b.game().B
+	title, stack := "STACK", g.Stacks[b.cursor()]
+	label := "EMPTY"
+	if len(stack) > 0 {
+		owner := "WHITE"
+		if stack[len(stack)-1].Color == engine.Black {
+			owner = "BLACK"
+		}
+		label = fmt.Sprintf("%d HIGH · %s", len(stack), owner)
+	}
+	if b.carrying {
+		from := g.Stacks[b.from]
+		dropped := 0
+		for _, d := range b.drops {
+			dropped += d
+		}
+		stack = from[len(from)-b.carry+dropped:]
+		title, label = "IN HAND", fmt.Sprintf("%d STONE%s", len(stack), plural(len(stack)))
+	}
+	c.Text(x+3, y, title, "pink", "", true)
+	c.Text(x+3, y+1, label, "dim", "", false)
+	s := set(b.seat.Equipped(kindStones))
+	shown := stack[max(0, len(stack)-5):]
+	for k, p := range shown { // two pixels a stone, bottom up
+		face, edge := s.colours(p.Color, false)
+		py := 2*(y+h-1) + 1 - 2*k
+		for i := 0; i < 10; i++ {
+			role := face
+			if i == 0 || i == 9 {
+				role = edge
+			}
+			c.Px(x+3+i, py, role)
+			c.Px(x+3+i, py-1, edge)
+		}
+	}
+	if len(stack) > len(shown) {
+		c.Text(x+14, y+2, fmt.Sprintf("+%d", len(stack)-len(shown)), "yellow", "", true)
+	}
+}
+
+// Status is what went wrong, for the status row (in red).
+func (b *Board) Status() string { return b.err }
+
+// Hint is what to do next, for the status row (table.Hinter).
+func (b *Board) Hint() string {
+	switch {
+	case b.typing:
+		return "type a move: " + b.input + "_"
+	case b.carrying:
+		return fmt.Sprintf("carrying %d · arrows drop · space another · enter the rest", b.carry)
+	case !b.seat.MyTurn():
+		return ""
+	case b.game().B.Ply < 2:
+		return "first move: place one of your opponent's flats"
+	}
+	return "enter a flat · s a wall · c a capstone · enter on yours picks it up"
+}
+
+// Animating is true while CRUSH! shows (table.Animator).
+func (b *Board) Animating() bool {
+	return b.callout != "" && b.seat.Effects() == "" && time.Since(b.calloutAt) < calloutLasts
 }

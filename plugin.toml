@@ -6,8 +6,12 @@
 id = "concord-tak"
 name = "Tak"
 version = "0.1.0"            # release.go stamps the git tag here
-description = "Play Tak (the beautiful game from The Wise Man's Fear) in a channel, against each other or the computer."
+description = "Tak in the stone garden: build a road, play the computer, sit down at a table or challenge a member. Choose the board size for each game, read every stack, and trade Pebbles at the quarry for new stones and boards."
 source_url = "https://github.com/JMThomas00/concord-tak"
+
+# Sounds in client/, served by Concord to members.
+[client]
+capabilities = ["sound"]
 
 [process]
 restart_on_crash = true
@@ -57,21 +61,8 @@ remote_pane = true
   default = "normal"
   help = "How well the computer plays"
 
-  [[channel_kind.create_field]]
-  key = "board_size"
-  label = "Board size"
-  type = "select"
-  options = ["3", "4", "5", "6", "7", "8"]
-  default = "5"
-  help = "5×5 is the usual game; 3×3 and 4×4 are quick, 6×6 and up are long"
-
-  [[channel_kind.create_field]]
-  key = "komi"
-  label = "Komi"
-  type = "select"
-  options = ["0", "0.5", "1", "1.5", "2", "2.5"]
-  default = "0"
-  help = "Points added to Black's flat count, to offset White moving first"
+  # The board size and komi are chosen for each game, on the arcade's NEW
+  # GAME screen, rather than for the whole channel.
 
 # Achievements and the leaderboard. The table kit keeps every player's
 # record and unlocks these for you; members see them on Settings > About

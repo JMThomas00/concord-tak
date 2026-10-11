@@ -23,6 +23,8 @@ var Rules = table.Rules{
 	SeatNames: []string{"White", "Black"},
 	New:       func(options map[string]string) table.Game { return New(options) },
 	NewBoard:  func(s *table.Seat) tea.Model { return newBoard(s) },
+	Sound:     sound,
+	Arcade:    arcadeLook,
 	AI: func(g table.Game, level int) string {
 		b := g.(*Game).B
 		return engine.Best(b, level).PTN(b)
@@ -33,6 +35,10 @@ var Rules = table.Rules{
 type Game struct {
 	B    *engine.Board
 	Last string // the last move, in PTN
+	// What the last move touched, and whether a capstone flattened a wall.
+	LastSquares map[int]bool
+	Crushed     bool
+	Slid        bool
 }
 
 // New starts a game with the given options (bad values fall back to 5×5,
@@ -66,6 +72,15 @@ func (g *Game) Play(move string) error {
 		return err
 	}
 	g.Last = m.PTN(g.B)
+	g.LastSquares, g.Crushed, g.Slid = map[int]bool{m.Sq: true}, false, m.IsSlide()
+	at := m.Sq
+	for range m.Drops {
+		at = step(g.B, at, m.Dir)
+		g.LastSquares[at] = true
+	}
+	if top, ok := g.B.Top(at); ok && m.IsSlide() && top.Kind == engine.Wall {
+		g.Crushed = true // only a capstone may land on a wall, and it flattens it
+	}
 	g.B = g.B.Apply(m)
 	return nil
 }

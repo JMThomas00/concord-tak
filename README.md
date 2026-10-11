@@ -2,7 +2,11 @@
 
 Tak, the abstract strategy game, for the terminal and for
 [Concord](https://github.com/JMThomas00/Concord) channels, from the same
-program.
+program. In Concord it's a little arcade cabinet in a stone garden: a title
+screen where the computer plays itself, stacks drawn side on so you can read
+them, a road that lights up edge to edge when it wins, **CRUSH!** when a
+capstone flattens a wall, chiptune sounds, a Hall of Fame, and **Pebbles** to
+trade at **THE QUARRY** for new stones and boards.
 
 ## Play it on your own computer
 
@@ -39,11 +43,34 @@ You need to be the server owner, or have the **Manage Plugins** permission.
      *private* (your own games with opponents you pick).
    - **Allow spectators**, **Computer opponent**, and **Computer strength**
      (easy, normal or hard).
-   - **Board size** (3×3 to 8×8) and **Komi**.
-4. Select the channel and press **Tab** (or click the board) so your keys go
-   to the game. **M** opens the table menu: sit down, play the computer,
-   resign, rematch. **Esc** gives the keyboard back to Concord (once there's
-   nothing to cancel), and **Tab** moves on to the member list.
+4. Select the channel and press **Tab** (or click it) so your keys go to the
+   game. Press **Enter** on the title screen, then pick from the menu.
+
+## The arcade
+
+Everyone who opens the channel starts on the title screen. The menu:
+
+- **1 PLAYER VS CPU** `◂ NORMAL ▸`: a game of your own against the computer;
+  leave and come back to carry on.
+- **TAKE A SEAT** (seats channels), **2 PLAYERS** and **WATCH** (challenge
+  channels), or **NEW GAME** and **YOUR GAMES** (private channels).
+- **THE QUARRY**: your stones and board. 12 stone sets, each with a flat, a
+  wall and a capstone (river stones, granite, jade, sandstone ... and
+  pancakes and waffles, books, grape crates), and 7 boards (raked sand,
+  slate, moss, river bed, cherry blossom, lantern night, vineyard rows).
+  Everyone sees the game in their own.
+- **HALL OF FAME**, **HOW TO PLAY** and **OPTIONS** (your sound and effects).
+
+**Every new game starts on a NEW GAME screen:** the **board size** (3×3 to
+8×8) and **komi**, with a preview. Against the computer you choose; at a
+seats table the first player to sit chooses; a challenger chooses, and the
+invitation says what. Your last choices are remembered, and a rematch keeps
+them.
+
+At the table, the panel on the left shows the whole **STACK** under the
+cursor, bottom to top, or what's **IN HAND** while you carry one. You earn a
+**Pebble** for each new achievement, every three wins in a row and every ten
+games. A pane smaller than 64×24 gets the plain board instead.
 
 To update later: select it in **Server Settings → Plugins**, press **U**, then
 Enter. A failed update rolls back by itself.
@@ -84,7 +111,12 @@ Each player's first move places one of the **opponent's** flat stones.
 
 - `engine/`: the rules, PTN, and the computer player. Move generation is
   checked against the known move counts (perft) for 5×5.
-- `game/`: connects the engine to the Concord SDK's table kit, and the board you play on.
+- `game/`: connects the engine to the Concord SDK's table kit: the board you
+  play on (`board.go`), the stone sets and boards (`sets.go`, `draw.go`),
+  the arcade's personality and NEW GAME options (`arcade.go`) and the move
+  sounds (`sound.go`).
+- `client/`: the sounds Concord sends to members' clients; `go run tools/gen.go`
+  regenerates them (and the arcade sound kit).
 - `release.go`: `go run release.go` builds the release zips Concord installs.
 
 Tag a version (`git tag v0.1.0 && git push --tags`) and the workflow publishes them.
